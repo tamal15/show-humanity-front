@@ -1,5 +1,8 @@
 const express= require("express")
+// const { MongoClient, ServerApiVersion } = require('mongodb');
 const { MongoClient, ServerApiVersion } = require('mongodb');
+// var MongoClient = require('mongodb').MongoClient;
+
 const ObjectId = require("mongodb").ObjectId;
 require('dotenv').config();
 const cors = require("cors");
@@ -16,9 +19,13 @@ app.use(express.json())
 // const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
 
-const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.2m2tmgj.mongodb.net/?retryWrites=true&w=majority`;
-const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+// const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.2m2tmgj.mongodb.net/?retryWrites=true&w=majority`;
+// const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
+
+var uri = "mongodb://oahiduzzaman267:3IDIq3Hn6I65Jusw@ac-qpqtjt6-shard-00-00.2m2tmgj.mongodb.net:27017,ac-qpqtjt6-shard-00-01.2m2tmgj.mongodb.net:27017,ac-qpqtjt6-shard-00-02.2m2tmgj.mongodb.net:27017/?ssl=true&replicaSet=atlas-r654r5-shard-0&authSource=admin&retryWrites=true&w=majority";
+
+const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
 
 
@@ -33,6 +40,8 @@ async function run() {
         const shisuVirdhaCollection = database.collection('shisuVirdha');
         const userCollectedCollection = database.collection('userCollected');
         const contactCollection = database.collection('contact');
+        const institutionCollection = database.collection('institution');
+        const donateInfoCollection = database.collection('donateInfo');
 
 
 
@@ -41,6 +50,14 @@ async function run() {
             const user=req.body;
             console.log(user)
             const result=await userCollection.insertOne(user);
+            // console.log(body)
+            res.json(result);
+           
+        });
+         app.post('/donateinfo', async(req,res)=>{
+            const user=req.body;
+            console.log(user)
+            const result=await donateInfoCollection.insertOne(user);
             // console.log(body)
             res.json(result);
            
@@ -67,6 +84,19 @@ async function run() {
           ispolice=true;
         }
         res.json({police:ispolice})
+    });
+
+    // institution data check 
+
+    app.get('/userIns/:email', async(req,res)=>{
+        const email=req.params.email;
+        const query={email:email}
+        const user=await userCollection.findOne(query)
+        let isinstitution=false;
+        if(user?.client==='institution'){
+            isinstitution=true;
+        }
+        res.json({institution:isinstitution})
     });
        
     // database admin role 
@@ -98,6 +128,23 @@ async function run() {
       console.log(user);
       
         const result=await shisuVirdhaCollection.insertOne(user);
+        res.json(result)
+    });
+
+    // post institution 
+     app.post('/postins', async(req,res) =>{
+        const user=req.body;
+      console.log(user);
+      
+        const result=await donateInfoCollection.insertOne(user);
+        res.json(result)
+    });
+    // post institution donet
+     app.post('/serviceIns', async(req,res) =>{
+        const user=req.body;
+      console.log(user);
+      
+        const result=await institutionCollection.insertOne(user);
         res.json(result)
     });
 
@@ -184,12 +231,61 @@ async function run() {
     });
 
 
+    // institution data get 
+    app.get("/institutions", async (req, res) => {
+        const page = req.query.page;
+        const size = parseInt(req.query.size);
+        const query = req.query;
+        delete query.page
+        delete query.size
+        Object.keys(query).forEach(key => {
+            if (!query[key])
+                delete query[key]
+        });
+    
+        if (Object.keys(query).length) {
+            const cursor = institutionCollection.find(query, status = "approved");
+            const count = await cursor.count()
+            const allData = await cursor.skip(page * size).limit(size).toArray()
+            res.json({
+                allData, count
+            });
+        } else {
+            const cursor = institutionCollection.find({
+                // status: "approved"
+            });
+            const count = await cursor.count()
+            const allData = await cursor.skip(page * size).limit(size).toArray()
+    
+            res.json({
+              allData, count
+            });
+
+              
+
+        }
+    
+    });
+
+
     // contact 
     app.post('/contact', async(req,res)=>{
         const data=req.body;
         const result=await contactCollection.insertOne(data);
         res.json(result)
     });
+
+    // show institutionCollection 
+     app.get("/showinstitution/:email", async (req, res) => {
+        // const buyeremail=req.body.cartProducts.map((data)=>data.buyerEmail)
+        console.log(req.params.email);
+        const email = req.params.email;
+        const result = await institutionCollection
+          .find({ donetEmail: email })
+          .toArray();
+          console.log(result)
+        res.send(result);
+      });
 
     }
 
