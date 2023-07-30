@@ -396,7 +396,7 @@ async function run() {
         // console.log(req.body);
       const order=await donatePaymentCollection.deleteOne({tran_id:req.body.tran_id})
         res.status(400).redirect('https://show-humanity.web.app')
-      })
+      });
       app.post ('/cancel', async(req,res)=>{
         // console.log(req.body);
         const order=await donatePaymentCollection.deleteOne({tran_id:req.body.tran_id})
